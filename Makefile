@@ -7,4 +7,13 @@ createdb:
 dropdb:
 	docker exec -it gobank dropdb gobank
 
-.PHONY: postgres createdb dropdb
+migrateup:
+	migrate -path db/migration/ -database "postgresql://root:root@localhost:5432/gobank?sslmode=disable" -verbose up
+
+migratedown:
+	migrate -path db/migration/ -database "postgresql://root:root@localhost:5432/gobank?sslmode=disable" -verbose down
+
+sqlc:
+	sqlc generate
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc
