@@ -17,7 +17,7 @@ func createRandomTransfer(t *testing.T, fromAccount, toAccount Account) Transfer
 	arg := CreateTransferParams{
 		FromAccountID: fromAccount.ID,
 		ToAccountID:   toAccount.ID,
-		Amount:        util.RandomBalance(balance),
+		Amount:        util.RandomAmount(balance),
 	}
 
 	transfer, err := testQueries.CreateTransfer(context.Background(), arg)
