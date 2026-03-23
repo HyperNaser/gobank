@@ -29,8 +29,8 @@ func RandomOwner() string {
 	return RandomString(6)
 }
 
-func RandomBalance() string {
-	return strconv.FormatInt(RandomInt(0, 5000), 10)
+func RandomBalance(max int64) string {
+	return strconv.FormatInt(RandomInt(0, max), 10)
 }
 
 func RandomCurrency() string {
