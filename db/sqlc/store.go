@@ -69,9 +69,11 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
+		amountNegative := amount.Neg().String()
+
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountID,
-			Amount:    amount.Neg().String(),
+			Amount:    amountNegative,
 		})
 		if err != nil {
 			return err
@@ -87,37 +89,17 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 
 		// TODO: update accounts' balance
 
-		account1, err := q.GetAccountForUpdate(ctx, arg.FromAccountID)
-		if err != nil {
-			return err
-		}
-
-		acc1bal, err := decimal.NewFromString(account1.Balance)
-		if err != nil {
-			return err
-		}
-
-		result.FromAccount, err = q.UpdateAccount(ctx, UpdateAccountParams{
-			ID:      arg.FromAccountID,
-			Balance: acc1bal.Sub(amount).String(),
+		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.FromAccountID,
+			Amount: amountNegative,
 		})
 		if err != nil {
 			return err
 		}
 
-		account2, err := q.GetAccountForUpdate(ctx, arg.ToAccountID)
-		if err != nil {
-			return err
-		}
-
-		acc2bal, err := decimal.NewFromString(account2.Balance)
-		if err != nil {
-			return err
-		}
-
-		result.ToAccount, err = q.UpdateAccount(ctx, UpdateAccountParams{
-			ID:      arg.ToAccountID,
-			Balance: acc2bal.Add(amount).String(),
+		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.ToAccountID,
+			Amount: arg.Amount,
 		})
 		if err != nil {
 			return err
