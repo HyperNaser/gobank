@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -11,13 +10,10 @@ import (
 )
 
 func createRandomTransfer(t *testing.T, fromAccount, toAccount Account) Transfer {
-	balance, err := strconv.ParseInt(fromAccount.Balance, 10, 64)
-	require.NoError(t, err)
-
 	arg := CreateTransferParams{
 		FromAccountID: fromAccount.ID,
 		ToAccountID:   toAccount.ID,
-		Amount:        util.RandomAmount(balance),
+		Amount:        util.RandomAmount(1000),
 	}
 
 	transfer, err := testQueries.CreateTransfer(context.Background(), arg)

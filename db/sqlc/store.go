@@ -1,0 +1,130 @@
+// Package db is where all our db related operations are packaged
+package db
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+
+	"github.com/shopspring/decimal"
+)
+
+type Store struct {
+	*Queries
+	db *sql.DB
+}
+
+func NewStore(db *sql.DB) *Store {
+	return &Store{
+		db:      db,
+		Queries: New(db),
+	}
+}
+
+func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+	tx, err := store.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	q := New(tx)
+	err = fn(q)
+	if err != nil {
+		if rbError := tx.Rollback(); rbError != nil {
+			return fmt.Errorf("tx err: %v, rb err: %v", err, rbError)
+		}
+		return err
+	}
+
+	return tx.Commit()
+}
+
+type TransferTxParams struct {
+	FromAccountID int64  `json:"from_account_id"`
+	ToAccountID   int64  `json:"to_acocunt_id"`
+	Amount        string `json:"amount"`
+}
+
+type TransferTxResult struct {
+	Transfer    Transfer `json:"transfer"`
+	FromAccount Account  `json:"from_account"`
+	ToAccount   Account  `json:"to_account"`
+	FromEntry   Entry    `json:"from_entry"`
+	ToEntry     Entry    `json:"to_entry"`
+}
+
+func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
+	var result TransferTxResult
+
+	err := store.execTx(ctx, func(q *Queries) error {
+		var err error
+
+		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams(arg))
+		if err != nil {
+			return err
+		}
+
+		amount, err := decimal.NewFromString(arg.Amount)
+		if err != nil {
+			return err
+		}
+
+		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+			AccountID: arg.FromAccountID,
+			Amount:    amount.Neg().String(),
+		})
+		if err != nil {
+			return err
+		}
+
+		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+			AccountID: arg.ToAccountID,
+			Amount:    arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		// TODO: update accounts' balance
+
+		account1, err := q.GetAccountForUpdate(ctx, arg.FromAccountID)
+		if err != nil {
+			return err
+		}
+
+		acc1bal, err := decimal.NewFromString(account1.Balance)
+		if err != nil {
+			return err
+		}
+
+		result.FromAccount, err = q.UpdateAccount(ctx, UpdateAccountParams{
+			ID:      arg.FromAccountID,
+			Balance: acc1bal.Sub(amount).String(),
+		})
+		if err != nil {
+			return err
+		}
+
+		account2, err := q.GetAccountForUpdate(ctx, arg.ToAccountID)
+		if err != nil {
+			return err
+		}
+
+		acc2bal, err := decimal.NewFromString(account2.Balance)
+		if err != nil {
+			return err
+		}
+
+		result.ToAccount, err = q.UpdateAccount(ctx, UpdateAccountParams{
+			ID:      arg.ToAccountID,
+			Balance: acc2bal.Add(amount).String(),
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return result, err
+}
