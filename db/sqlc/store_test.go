@@ -127,3 +127,61 @@ func TestTransferTx(t *testing.T) {
 	require.True(t, oldBal1.Sub(totalAmount).Equal(updatedAccount1Balance))
 	require.True(t, oldBal2.Add(totalAmount).Equal(updatedAccount2Balance))
 }
+
+func TestTransferTxDeadlock(t *testing.T) {
+	store := NewStore(testDB)
+
+	account1 := createRandomAccount(t)
+	account2 := createRandomAccount(t)
+
+	oldBal1, err := decimal.NewFromString(account1.Balance)
+	require.NoError(t, err)
+
+	oldBal2, err := decimal.NewFromString(account2.Balance)
+	require.NoError(t, err)
+
+	n := int64(10)
+	amount := decimal.New(10, 0)
+
+	errs := make(chan error)
+
+	for i := range n {
+		fromAccountID := account1.ID
+		toAccountID := account2.ID
+
+		if i%2 == 1 {
+			fromAccountID = account2.ID
+			toAccountID = account1.ID
+		}
+
+		go func() {
+			_, err := store.TransferTx(context.Background(), TransferTxParams{
+				FromAccountID: fromAccountID,
+				ToAccountID:   toAccountID,
+				Amount:        amount.String(),
+			})
+
+			errs <- err
+		}()
+	}
+
+	for range n {
+		err := <-errs
+		require.NoError(t, err)
+	}
+
+	updatedAccount1, err := testQueries.GetAccount(context.Background(), account1.ID)
+	require.NoError(t, err)
+
+	updatedAccount2, err := testQueries.GetAccount(context.Background(), account2.ID)
+	require.NoError(t, err)
+
+	updatedAccount1Balance, err := decimal.NewFromString(updatedAccount1.Balance)
+	require.NoError(t, err)
+
+	updatedAccount2Balance, err := decimal.NewFromString(updatedAccount2.Balance)
+	require.NoError(t, err)
+
+	require.True(t, oldBal1.Equal(updatedAccount1Balance))
+	require.True(t, oldBal2.Equal(updatedAccount2Balance))
+}
