@@ -13,7 +13,7 @@ sql:
         emit_db_tags: false
         emit_prepared_queries: false
         emit_exact_table_names: false
-        emit_empty_slices: false
+        emit_empty_slices: true
         emit_result_struct_pointers: false
         emit_params_struct_pointers: false
         emit_methods_with_db_argument: false
