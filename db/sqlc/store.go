@@ -87,8 +87,6 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		// TODO: update accounts' balance
-
 		if arg.FromAccountID < arg.ToAccountID {
 			result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
 				ID:     arg.FromAccountID,
@@ -121,6 +119,41 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			if err != nil {
 				return err
 			}
+		}
+
+		return nil
+	})
+
+	return result, err
+}
+
+type DepositTxParams struct {
+	AccountID int64  `json:"acocunt_id"`
+	Amount    string `json:"amount"`
+}
+
+type DepositTxResult struct {
+	Account Account `json:"account"`
+	Entry   Entry   `json:"entry"`
+}
+
+func (store *Store) DepositTx(ctx context.Context, arg DepositTxParams) (DepositTxResult, error) {
+	var result DepositTxResult
+
+	err := store.execTx(ctx, func(q *Queries) error {
+		var err error
+
+		result.Entry, err = q.CreateEntry(ctx, CreateEntryParams(arg))
+		if err != nil {
+			return err
+		}
+
+		result.Account, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.AccountID,
+			Amount: arg.Amount,
+		})
+		if err != nil {
+			return err
 		}
 
 		return nil

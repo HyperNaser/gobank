@@ -1,3 +1,4 @@
+// Package api is where the API code and logic sits at
 package api
 
 import (
@@ -16,7 +17,11 @@ func NewServer(store *db.Store) *Server {
 
 	router.POST("/accounts", server.createAccount)
 	router.GET("/accounts/:id", server.getAccount)
-	router.GET("/accounts", server.listAccount)
+	router.GET("/accounts", server.listAccounts)
+	router.DELETE("/accounts/:id", server.deleteAccount)
+
+	router.GET("/entries/:id", server.getEntry)
+	router.GET("/entries", server.listEntries)
 
 	server.router = router
 	return server
