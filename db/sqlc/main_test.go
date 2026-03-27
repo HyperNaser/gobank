@@ -6,12 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/HyperNaser/gobank/util"
 	_ "github.com/lib/pq"
-)
-
-const (
-	dbDriver = "postgres"
-	dbSource = "postgresql://root:root@localhost:5432/gobank?sslmode=disable"
 )
 
 var (
@@ -20,9 +16,12 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	var err error
+	config, err := util.LoadConfig("../..")
+	if err != nil {
+		log.Fatal("Could not load config:", err)
+	}
 
-	testDB, err = sql.Open(dbDriver, dbSource)
+	testDB, err = sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
