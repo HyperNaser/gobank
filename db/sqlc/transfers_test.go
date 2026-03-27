@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HyperNaser/gobank/db/util"
+	"github.com/HyperNaser/gobank/util"
 	"github.com/stretchr/testify/require"
 )
 
