@@ -19,7 +19,10 @@ sqlc:
 test:
 	go test -v -coverprofile=coverage.out ./...
 
+mock:
+	mockgen -package mockdb -destination db/mock/store.go github.com/HyperNaser/gobank/db/sqlc Store
+
 server:
 	go run main.go
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test mock server
