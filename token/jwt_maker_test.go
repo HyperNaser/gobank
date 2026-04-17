@@ -10,7 +10,7 @@ import (
 )
 
 func TestJWTMaker(t *testing.T) {
-	maker, err := NewJWTMaker(util.RandomString(32))
+	maker, err := NewJWTMaker(util.RandomString(minSecretKeySize))
 	require.NoError(t, err)
 
 	username := util.RandomOwner()
@@ -34,7 +34,7 @@ func TestJWTMaker(t *testing.T) {
 }
 
 func TestExpiredJWTToken(t *testing.T) {
-	maker, err := NewJWTMaker(util.RandomString(32))
+	maker, err := NewJWTMaker(util.RandomString(minSecretKeySize))
 	require.NoError(t, err)
 
 	token, err := maker.CreateToken(util.RandomOwner(), -time.Minute)
@@ -43,14 +43,14 @@ func TestExpiredJWTToken(t *testing.T) {
 
 	payload, err := maker.VerifyToken(token)
 	require.Error(t, err)
-	require.ErrorIs(t, err, jwt.ErrTokenExpired)
+	require.EqualError(t, err, ErrExpiredToken.Error())
 	require.Nil(t, payload)
 }
 
-func TestSecretKeyTooSmall(t *testing.T) {
+func TestJWTSecretKeyTooSmall(t *testing.T) {
 	maker, err := NewJWTMaker(util.RandomString(minSecretKeySize - 1))
 	require.Error(t, err)
-	require.ErrorIs(t, err, ErrSecretKeyTooSmall)
+	require.ErrorIs(t, err, ErrInvalidKeySize)
 	require.Nil(t, maker)
 }
 
@@ -69,7 +69,7 @@ func TestInvalidJWTTokenInvalidAlgorithm(t *testing.T) {
 	token, err := jwtToken.SignedString(jwt.UnsafeAllowNoneSignatureType)
 	require.NoError(t, err)
 
-	maker, err := NewJWTMaker(util.RandomString(32))
+	maker, err := NewJWTMaker(util.RandomString(minSecretKeySize))
 	require.NoError(t, err)
 
 	payload, err = maker.VerifyToken(token)
@@ -79,7 +79,7 @@ func TestInvalidJWTTokenInvalidAlgorithm(t *testing.T) {
 }
 
 func TestInvalidJWTTokenInvalidID(t *testing.T) {
-	secretKey := util.RandomString(32)
+	secretKey := util.RandomString(minSecretKeySize)
 	payload, err := NewPayload(util.RandomOwner(), time.Minute)
 	require.NoError(t, err)
 

@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrInvalidToken      = errors.New("token is invalid")
-	ErrSecretKeyTooSmall = errors.New("secret key is too small")
+	ErrInvalidToken   = errors.New("token is invalid")
+	ErrExpiredToken   = errors.New("token has expired")
+	ErrInvalidKeySize = errors.New("invalid key size")
 )
 
 type Payload struct {
