@@ -208,11 +208,11 @@ func requireBodyMatchUser(t *testing.T, body *bytes.Buffer, user db.User) {
 	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
-	var response createUserResponse
+	var response userResponse
 	err = json.Unmarshal(data, &response)
 	require.NoError(t, err)
 
-	require.Equal(t, createUserResponse{
+	require.Equal(t, userResponse{
 		Username: user.Username,
 		FullName: user.FullName,
 		Email:    user.Email,
