@@ -98,7 +98,7 @@ func TestGetTransferAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			url := fmt.Sprintf("/transfers/%d", tc.transferID)
@@ -209,7 +209,7 @@ func TestListTransfersAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			url := url.URL{Path: "/transfers", RawQuery: tc.query.Encode()}

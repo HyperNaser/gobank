@@ -97,7 +97,7 @@ func TestGetEntryAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			url := fmt.Sprintf("/entries/%d", tc.entryID)
@@ -208,7 +208,7 @@ func TestListEntriesAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			url := url.URL{Path: "/entries", RawQuery: tc.query.Encode()}
