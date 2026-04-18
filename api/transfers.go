@@ -2,10 +2,12 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	db "github.com/HyperNaser/gobank/db/sqlc"
+	"github.com/HyperNaser/gobank/token"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 )
@@ -31,13 +33,42 @@ func (server *Server) getTransfer(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	fromAccount, err := server.store.GetAccount(ctx, transfer.FromAccountID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	if authPayload.Username != fromAccount.Owner {
+		toAccount, err := server.store.GetAccount(ctx, transfer.ToAccountID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				ctx.JSON(http.StatusNotFound, errorResponse(err))
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+
+		if authPayload.Username != toAccount.Owner {
+			err := errors.New("transfer doesn't belong to authenticated user")
+			ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+			return
+		}
+	}
+
 	ctx.JSON(http.StatusOK, transfer)
 }
 
 type listAccountTransfersRequest struct {
-	AccountID *int64 `form:"account_id" binding:"omitempty,min=1"`
-	Page      int32  `form:"page" binding:"required,min=1"`
-	Size      int32  `form:"size" binding:"required,min=5,max=10"`
+	AccountID int64 `form:"account_id" binding:"required,min=1"`
+	Page      int32 `form:"page" binding:"required,min=1"`
+	Size      int32 `form:"size" binding:"required,min=5,max=10"`
 }
 
 func (server *Server) listTransfers(ctx *gin.Context) {
@@ -53,21 +84,29 @@ func (server *Server) listTransfers(ctx *gin.Context) {
 		err       error
 	)
 
-	if req.AccountID != nil {
-		arg := db.ListAccountTransfersParams{
-			FromAccountID: *req.AccountID,
-			Limit:         req.Size,
-			Offset:        (req.Page - 1) * req.Size,
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	account, err := server.store.GetAccount(ctx, req.AccountID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
 		}
-		transfers, err = server.store.ListAccountTransfers(ctx, arg)
-	} else {
-		arg := db.ListTransfersParams{
-			Limit:  req.Size,
-			Offset: (req.Page - 1) * req.Size,
-		}
-		transfers, err = server.store.ListTransfers(ctx, arg)
-
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
 	}
+
+	if authPayload.Username != account.Owner {
+		err := errors.New("transfers don't belong to authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	arg := db.ListAccountTransfersParams{
+		FromAccountID: req.AccountID,
+		Limit:         req.Size,
+		Offset:        (req.Page - 1) * req.Size,
+	}
+	transfers, err = server.store.ListAccountTransfers(ctx, arg)
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -91,11 +130,20 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 		return
 	}
 
-	if !server.validAccount(ctx, req.FromAccountID, req.Currency) {
+	fromAccount, valid := server.validAccount(ctx, req.FromAccountID, req.Currency)
+	if !valid {
 		return
 	}
 
-	if !server.validAccount(ctx, req.ToAccountID, req.Currency) {
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if fromAccount.Owner != authPayload.Username {
+		err := errors.New("from account doesn't belong to authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	_, valid = server.validAccount(ctx, req.ToAccountID, req.Currency)
+	if !valid {
 		return
 	}
 
@@ -114,22 +162,22 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 }
 
-func (server *Server) validAccount(ctx *gin.Context, accountID int64, currency string) bool {
+func (server *Server) validAccount(ctx *gin.Context, accountID int64, currency string) (db.Account, bool) {
 	account, err := server.store.GetAccount(ctx, accountID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return false
+			return account, false
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return false
+		return account, false
 	}
 
 	if account.Currency != currency {
 		err := fmt.Errorf("account [%d] currency mismatch: %s vs %s", accountID, account.Currency, currency)
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return false
+		return account, false
 	}
 
-	return true
+	return account, true
 }

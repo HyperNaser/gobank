@@ -2,9 +2,11 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 
 	db "github.com/HyperNaser/gobank/db/sqlc"
+	"github.com/HyperNaser/gobank/token"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 )
@@ -30,13 +32,30 @@ func (server *Server) getEntry(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	account, err := server.store.GetAccount(ctx, entry.AccountID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	if account.Owner != authPayload.Username {
+		err := errors.New("entry doesn't belong to authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, entry)
 }
 
 type listEntriesRequest struct {
-	AccountID *int64 `form:"account_id" binding:"omitempty,min=1"`
-	Page      int32  `form:"page" binding:"required,min=1"`
-	Size      int32  `form:"size" binding:"required,min=5,max=10"`
+	AccountID int64 `form:"account_id" binding:"required,min=1"`
+	Page      int32 `form:"page" binding:"required,min=1"`
+	Size      int32 `form:"size" binding:"required,min=5,max=10"`
 }
 
 func (server *Server) listEntries(ctx *gin.Context) {
@@ -52,21 +71,29 @@ func (server *Server) listEntries(ctx *gin.Context) {
 		err     error
 	)
 
-	if req.AccountID != nil {
-		arg := db.ListAccountEntriesParams{
-			AccountID: *req.AccountID,
-			Limit:     req.Size,
-			Offset:    (req.Page - 1) * req.Size,
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	account, err := server.store.GetAccount(ctx, req.AccountID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
 		}
-		entries, err = server.store.ListAccountEntries(ctx, arg)
-	} else {
-		arg := db.ListEntriesParams{
-			Limit:  req.Size,
-			Offset: (req.Page - 1) * req.Size,
-		}
-		entries, err = server.store.ListEntries(ctx, arg)
-
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
 	}
+
+	if account.Owner != authPayload.Username {
+		err := errors.New("entries don't belong to authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	arg := db.ListAccountEntriesParams{
+		AccountID: req.AccountID,
+		Limit:     req.Size,
+		Offset:    (req.Page - 1) * req.Size,
+	}
+	entries, err = server.store.ListAccountEntries(ctx, arg)
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
