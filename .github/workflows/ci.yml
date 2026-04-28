@@ -15,7 +15,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:alpine
+        image: postgres:18.3-alpine3.23
         env:
           POSTGRES_USER: root
           POSTGRES_PASSWORD: root
@@ -23,7 +23,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U root"
+          --health-cmd "pg_isready -U root -d gobank"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
