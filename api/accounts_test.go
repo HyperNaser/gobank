@@ -31,10 +31,6 @@ func randomAccount(owner string) db.Account {
 }
 
 func randomAccountWithMinAmountAndCurrency(owner string, minAmount int64, currency string) db.Account {
-	if minAmount >= math.MaxInt64 {
-		minAmount = math.MaxInt64 / 2
-	}
-
 	return db.Account{
 		ID:       util.RandomInt(1, 1000),
 		Owner:    owner,
