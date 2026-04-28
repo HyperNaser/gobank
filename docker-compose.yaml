@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:18.3-alpine3.23
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=gobank
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "root", "-d", "gobank"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_SOURCE=postgresql://root:root@postgres:5432/gobank?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
