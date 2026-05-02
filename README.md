@@ -1,4 +1,6 @@
 Create gobank cluster via:
+# Basic Commands
+
 ```bash
 make cluster_gobank
 ```
