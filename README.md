@@ -5,12 +5,17 @@ make cluster_gobank
 
 Create postgres database cluster credentials via: 
 ```bash
-kubectl create secret generic db-creds --from-literal=username=root --from-literal=password='<PASSWORD>'
+make create_secret PWD='the_password'
 ```
 
 Create postgres database cluster via:
 ```bash
 make cluster_db
+```
+
+Create gobank-api cluster via:
+```bash
+make cluster_gobank_api
 ```
 
 Start cluster via:

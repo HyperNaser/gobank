@@ -31,6 +31,14 @@ mock:
 server:
 	go run main.go
 
+create_secret:
+	$(eval ENCODED_PWD := $(shell python3 -c "import urllib.parse; print(urllib.parse.quote('$(PWD)', safe=''))"))
+	@kubectl delete secret db-creds --ignore-not-found
+	@kubectl create secret generic db-creds \
+		--from-literal=username=root \
+		--from-literal=password='$(ENCODED_PWD)'
+	@echo "Secret created with encoded password."
+
 cluster_stop:
 	k3d cluster stop gobank-cluster
 
@@ -40,7 +48,13 @@ cluster_start:
 cluster_db:
 	kubectl apply -f postgres-cluster.yaml
 
+cluster_gobank_api:
+	kubectl apply -f gobank-api-deployment.yaml
+
 cluster_gobank:
 	k3d cluster create gobank-cluster --api-port 6550 -p "80:80@loadbalancer" -p "443:443@loadbalancer" --agents 2
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test mock server migrateup1 migratedown1 cluster_db cluster_start cluster_stop cluster_gobank
+db_tunnel:
+	kubectl port-forward svc/gobank-db-rw 5432:5432
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test mock server migrateup1 migratedown1 cluster_db cluster_start cluster_stop cluster_gobank cluster_gobank_api create_secret db_tunnel
