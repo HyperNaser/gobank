@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gobank-api
+  labels:
+    app: gobank-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gobank-api
+  template:
+    metadata:
+      labels:
+        app: gobank-api
+    spec:
+      containers:
+        - name: gobank-api
+          image: ghcr.io/hypernaser/gobank:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "128Mi"
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-creds
+                  key: password
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: db-creds
+                  key: username
+            - name: DB_SOURCE
+              value: "postgres://gobank-db-rw:5432/gobank?sslmode=disable"
+---
+# The Service (The Internal Load Balancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: gobank-api-service
+spec:
+  selector:
+    app: gobank-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+# The Ingress (The External Load Balancer)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gobank-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gobank-api-service
+                port:
+                  number: 80
