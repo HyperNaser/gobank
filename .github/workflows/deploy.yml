@@ -35,11 +35,6 @@ jobs:
           tags: |
             type=sha,format=long
             type=raw,value=latest
-          flavor: |
-            lower=true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
