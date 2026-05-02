@@ -5,7 +5,27 @@ make cluster_gobank
 
 Create postgres database cluster credentials via: 
 ```bash
-make create_secret PWD='the_password'
+kubectl create secret generic db-creds --from-literal=username=root --from-literal=password='YOUR_PASSWORD_HERE'
+```
+
+Delete postgres database cluster credentials via:
+```bash
+kubectl delete secret db-creds
+```
+
+Check pods via:
+```bash
+kubectl get pods
+```
+
+Delete a deployment via:
+```bash
+kubectl delete deployment DEPLOYMENT_NAME
+```
+
+Apply a deployment yaml file via:
+```bash
+kubectl apply -f PATH_TO_YAML
 ```
 
 Create postgres database cluster via:

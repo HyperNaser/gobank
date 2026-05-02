@@ -27,19 +27,19 @@ spec:
               cpu: "500m"
               memory: "128Mi"
           env:
-            - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: db-creds
-                  key: username
-            - name: DB_PASSWORD
+            - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
                   name: db-creds
                   key: password
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: db-creds
+                  key: username
             - name: DB_SOURCE
-              value: "postgresql://$(DB_USER):$(DB_PASSWORD)@gobank-db-rw:5432/gobank?sslmode=disable"
-
+              value: "postgres://gobank-db-rw:5432/gobank?sslmode=disable"
+---
 # The Service (The Internal Load Balancer)
 apiVersion: v1
 kind: Service
@@ -52,7 +52,7 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 8080
-
+---
 # The Ingress (The External Load Balancer)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
