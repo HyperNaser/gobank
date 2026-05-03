@@ -1,0 +1,17 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: gobank-cluster
+servers: 1
+agents: 2
+image: rancher/k3s:v1.36.0-rc3-k3s1
+kubeAPI:
+  hostIP: "0.0.0.0"
+  hostPort: "6550"
+ports:
+  - port: 80:80
+    nodeFilters:
+      - loadbalancer
+  - port: 443:443
+    nodeFilters:
+      - loadbalancer

@@ -14,6 +14,24 @@ spec:
       labels:
         app: gobank-api
     spec:
+      initContainers:
+        - name: wait-for-db
+          image: postgres:alpine
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for gobank-db-rw to be ready..."
+              until pg_isready -h gobank-db-rw -p 5432 -U $PGUSER; do
+                sleep 2
+              done
+              echo "Database is ready!"
+          env:
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: db-creds
+                  key: username
       containers:
         - name: gobank-api
           image: ghcr.io/hypernaser/gobank:latest

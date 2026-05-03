@@ -38,15 +38,37 @@ cluster_start:
 	k3d cluster start gobank-cluster
 
 cluster_db:
-	kubectl apply -f postgres-cluster.yaml
+	kubectl apply -f ./k8s/apps/gobank/postgres-cluster.yaml --server-side
 
 cluster_gobank_api:
-	kubectl apply -f gobank-api-deployment.yaml
+	kubectl apply -f ./k8s/apps/gobank/gobank-api-deployment.yaml --server-side
 
-cluster_gobank:
-	k3d cluster create gobank-cluster --api-port 6550 -p "80:80@loadbalancer" -p "443:443@loadbalancer" --agents 2
+apply_cluster_configs: # this is really hacky but we'll roll with it for now. If an issue arises, then rerun the command
+	kubectl apply -k ./k8s/base/cnpg-operator --server-side
+	sleep 20
+	kubectl wait --for condition=established --timeout=60s crd/clusters.postgresql.cnpg.io
+	kubectl apply -k ./k8s/apps/gobank --server-side
+
+cluster:
+	k3d cluster create --config ./k3d-config.yaml
+
+delete_cluster_gobank:
+	k3d cluster delete gobank-cluster
+
+namespace:
+	kubectl apply -f k8s/apps/gobank/namespace.yaml
+
+create_creds: namespace
+	@read -p "Enter DB Password: " pwd; \
+	kubectl create secret generic db-creds \
+		--from-literal=username=root \
+		--from-literal=password=$$pwd \
+		--namespace gobank \
+		--dry-run=client -o yaml | kubectl apply -f -
+
+setup: create_creds apply_cluster_configs
 
 db_tunnel:
 	kubectl port-forward svc/gobank-db-rw 5432:5432
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test mock server migrateup1 migratedown1 cluster_db cluster_start cluster_stop cluster_gobank cluster_gobank_api db_tunnel
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test mock server migrateup1 migratedown1 cluster_db cluster_start cluster_stop cluster cluster_gobank_api db_tunnel delete_cluster_gobank apply_cluster_configs namespace create_creds setup

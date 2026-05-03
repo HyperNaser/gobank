@@ -1,13 +1,32 @@
-Create gobank cluster via:
 # Basic Commands
 
+Create gobank cluster via:
 ```bash
-make cluster_gobank
+make cluster
+```
+
+Delete gobank cluster via:
+```bash
+make delete_cluster_gobank
+```
+
+Make initial setup via:
+```bash
+make setup
 ```
 
 Create postgres database cluster credentials via: 
 ```bash
-kubectl create secret generic db-creds --from-literal=username=root --from-literal=password='YOUR_PASSWORD_HERE'
+make create_creds
+```
+or manual via (make sure namespace exists first):
+```bash
+kubectl create secret generic db-creds --namespace gobank --from-literal=username=root --from-literal=password='YOUR_PASSWORD_HERE'
+```
+
+Create namespace via:
+```bash
+make namespace
 ```
 
 Delete postgres database cluster credentials via:
@@ -28,6 +47,11 @@ kubectl delete deployment DEPLOYMENT_NAME
 Apply a deployment yaml file via:
 ```bash
 kubectl apply -f PATH_TO_YAML
+```
+
+Apply all cluster configs:
+```bash
+make apply_cluster_configs
 ```
 
 Create postgres database cluster via:
