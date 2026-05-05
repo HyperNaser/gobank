@@ -6,7 +6,7 @@ servers: 1
 agents: 2
 image: rancher/k3s:v1.36.0-rc3-k3s1
 kubeAPI:
-  hostIP: "0.0.0.0"
+  hostIP: "127.0.0.1"
   hostPort: "6550"
 ports:
   - port: 80:80
