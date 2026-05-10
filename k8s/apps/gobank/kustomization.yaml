@@ -6,3 +6,5 @@ resources:
   - namespace.yaml
   - postgres-cluster.yaml
   - gobank-api-deployment.yaml
+  - service.yaml
+  - ingress.yaml
