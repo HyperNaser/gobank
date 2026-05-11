@@ -19,7 +19,7 @@ type createUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 }
 
-type userResponse struct {
+type UserResponse struct {
 	Username          string    `json:"username"`
 	FullName          string    `json:"full_name"`
 	Email             string    `json:"email"`
@@ -27,8 +27,8 @@ type userResponse struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
-func newUserResponse(user db.User) userResponse {
-	return userResponse{
+func newUserResponse(user db.User) UserResponse {
+	return UserResponse{
 		Username:          user.Username,
 		FullName:          user.FullName,
 		Email:             user.Email,
@@ -37,6 +37,18 @@ func newUserResponse(user db.User) userResponse {
 	}
 }
 
+// createUser handles user registration.
+// @Summary Create user
+// @Description Register a new user with username, password, full name, and email.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body createUserRequest true "Create user request"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /users [post]
 func (server *Server) createUser(ctx *gin.Context) {
 	var req createUserRequest
 	if err := ctx.ShouldBindWith(&req, binding.JSON); err != nil {
@@ -80,11 +92,24 @@ type loginUserRequest struct {
 	Password string `json:"password" binding:"required,min=8"`
 }
 
-type loginUserResponse struct {
-	AccessToken string `json:"access_token"`
-	User        userResponse
+type LoginUserResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        UserResponse `json:"user"`
 }
 
+// loginUser authenticates a user and returns a JWT access token.
+// @Summary Login user
+// @Description Authenticate with username and password to receive an access token.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param credentials body loginUserRequest true "Login credentials"
+// @Success 200 {object} LoginUserResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /users/login [post]
 func (server *Server) loginUser(ctx *gin.Context) {
 	var req loginUserRequest
 	if err := ctx.ShouldBindBodyWith(&req, binding.JSON); err != nil {
@@ -114,7 +139,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	resp := loginUserResponse{
+	resp := LoginUserResponse{
 		AccessToken: accessToken,
 		User:        newUserResponse(user),
 	}

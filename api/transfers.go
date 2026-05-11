@@ -16,6 +16,20 @@ type getTransferRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
+// getTransfer retrieves a transfer by ID when the authenticated user participates in it.
+// @Summary Get transfer
+// @Description Get a transfer by ID when the authenticated user is sender or receiver.
+// @Tags transfers
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "Transfer ID"
+// @Success 200 {object} TransferResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /transfers/{id} [get]
 func (server *Server) getTransfer(ctx *gin.Context) {
 	var req getTransferRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
@@ -71,6 +85,22 @@ type listAccountTransfersRequest struct {
 	Size      int32 `form:"size" binding:"required,min=5,max=10"`
 }
 
+// listTransfers returns paginated transfers for an account owned by the authenticated user.
+// @Summary List transfers
+// @Description List transfers for a specific account with pagination.
+// @Tags transfers
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param account_id query int true "Account ID"
+// @Param page query int true "Page number"
+// @Param size query int true "Page size"
+// @Success 200 {array} TransferResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /transfers [get]
 func (server *Server) listTransfers(ctx *gin.Context) {
 	var req listAccountTransfersRequest
 
@@ -123,6 +153,20 @@ type transferRequest struct {
 	Currency      string `json:"currency" binding:"required,currency"`
 }
 
+// createTransfer executes a transfer between two accounts owned by the authenticated user.
+// @Summary Create transfer
+// @Description Create a transfer from one account to another in a supported currency.
+// @Tags transfers
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param transfer body transferRequest true "Transfer request"
+// @Success 200 {object} TransferTxResultResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /transfers [post]
 func (server *Server) createTransfer(ctx *gin.Context) {
 	var req transferRequest
 	if err := ctx.ShouldBindWith(&req, binding.JSON); err != nil {

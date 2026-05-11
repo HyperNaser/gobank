@@ -78,3 +78,13 @@ Expose a port to database via:
 ```bash
 kubectl port-forward svc/gobank-db-rw 5432:5432
 ```
+
+Generate db docs via:
+```bash
+tbls doc
+```
+
+Generate swagger docs via:
+```bash
+swag init -g main.go -o docs
+```

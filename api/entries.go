@@ -15,6 +15,20 @@ type getEntryRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
+// getEntry retrieves a ledger entry by ID for the authenticated user.
+// @Summary Get entry
+// @Description Get a single entry by ID when it belongs to the authenticated user.
+// @Tags entries
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "Entry ID"
+// @Success 200 {object} EntryResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /entries/{id} [get]
 func (server *Server) getEntry(ctx *gin.Context) {
 	var req getEntryRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
@@ -58,6 +72,22 @@ type listEntriesRequest struct {
 	Size      int32 `form:"size" binding:"required,min=5,max=10"`
 }
 
+// listEntries returns paginated entries for an account owned by the authenticated user.
+// @Summary List entries
+// @Description List entries for a specific account with pagination.
+// @Tags entries
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param account_id query int true "Account ID"
+// @Param page query int true "Page number"
+// @Param size query int true "Page size"
+// @Success 200 {array} EntryResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /entries [get]
 func (server *Server) listEntries(ctx *gin.Context) {
 	var req listEntriesRequest
 

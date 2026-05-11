@@ -1,0 +1,686 @@
+{
+  "name": "gobank",
+  "tables": [
+    {
+      "name": "public.schema_migrations",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "version",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "dirty",
+          "type": "boolean",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "schema_migrations_pkey",
+          "def": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)",
+          "table": "public.schema_migrations",
+          "columns": [
+            "version"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "schema_migrations_dirty_not_null",
+          "type": "n",
+          "def": "NOT NULL dirty",
+          "table": "public.schema_migrations",
+          "referenced_table": "",
+          "columns": [
+            "dirty"
+          ]
+        },
+        {
+          "name": "schema_migrations_version_not_null",
+          "type": "n",
+          "def": "NOT NULL version",
+          "table": "public.schema_migrations",
+          "referenced_table": "",
+          "columns": [
+            "version"
+          ]
+        },
+        {
+          "name": "schema_migrations_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (version)",
+          "table": "public.schema_migrations",
+          "referenced_table": "",
+          "columns": [
+            "version"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.accounts",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('accounts_id_seq'::regclass)"
+        },
+        {
+          "name": "owner",
+          "type": "varchar",
+          "nullable": false
+        },
+        {
+          "name": "balance",
+          "type": "numeric",
+          "nullable": false
+        },
+        {
+          "name": "currency",
+          "type": "varchar",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "accounts_pkey",
+          "def": "CREATE UNIQUE INDEX accounts_pkey ON public.accounts USING btree (id)",
+          "table": "public.accounts",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "accounts_owner_idx",
+          "def": "CREATE INDEX accounts_owner_idx ON public.accounts USING btree (owner)",
+          "table": "public.accounts",
+          "columns": [
+            "owner"
+          ]
+        },
+        {
+          "name": "accounts_owner_currency_idx",
+          "def": "CREATE UNIQUE INDEX accounts_owner_currency_idx ON public.accounts USING btree (owner, currency) WHERE (deleted_at IS NULL)",
+          "table": "public.accounts",
+          "columns": [
+            "owner",
+            "currency"
+          ]
+        },
+        {
+          "name": "accounts_deleted_at_idx",
+          "def": "CREATE INDEX accounts_deleted_at_idx ON public.accounts USING btree (deleted_at) WHERE (deleted_at IS NULL)",
+          "table": "public.accounts",
+          "columns": [
+            "deleted_at"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "accounts_balance_not_null",
+          "type": "n",
+          "def": "NOT NULL balance",
+          "table": "public.accounts",
+          "referenced_table": "",
+          "columns": [
+            "balance"
+          ]
+        },
+        {
+          "name": "accounts_created_at_not_null",
+          "type": "n",
+          "def": "NOT NULL created_at",
+          "table": "public.accounts",
+          "referenced_table": "",
+          "columns": [
+            "created_at"
+          ]
+        },
+        {
+          "name": "accounts_currency_not_null",
+          "type": "n",
+          "def": "NOT NULL currency",
+          "table": "public.accounts",
+          "referenced_table": "",
+          "columns": [
+            "currency"
+          ]
+        },
+        {
+          "name": "accounts_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.accounts",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "accounts_owner_not_null",
+          "type": "n",
+          "def": "NOT NULL owner",
+          "table": "public.accounts",
+          "referenced_table": "",
+          "columns": [
+            "owner"
+          ]
+        },
+        {
+          "name": "accounts_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.accounts",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "accounts_owner_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (owner) REFERENCES users(username) DEFERRABLE",
+          "table": "public.accounts",
+          "referenced_table": "public.users",
+          "columns": [
+            "owner"
+          ],
+          "referenced_columns": [
+            "username"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.entries",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('entries_id_seq'::regclass)"
+        },
+        {
+          "name": "account_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "numeric",
+          "nullable": false,
+          "comment": "can be negative or positive"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "entries_pkey",
+          "def": "CREATE UNIQUE INDEX entries_pkey ON public.entries USING btree (id)",
+          "table": "public.entries",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "entries_account_id_idx",
+          "def": "CREATE INDEX entries_account_id_idx ON public.entries USING btree (account_id)",
+          "table": "public.entries",
+          "columns": [
+            "account_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "entries_account_id_not_null",
+          "type": "n",
+          "def": "NOT NULL account_id",
+          "table": "public.entries",
+          "referenced_table": "",
+          "columns": [
+            "account_id"
+          ]
+        },
+        {
+          "name": "entries_amount_not_null",
+          "type": "n",
+          "def": "NOT NULL amount",
+          "table": "public.entries",
+          "referenced_table": "",
+          "columns": [
+            "amount"
+          ]
+        },
+        {
+          "name": "entries_created_at_not_null",
+          "type": "n",
+          "def": "NOT NULL created_at",
+          "table": "public.entries",
+          "referenced_table": "",
+          "columns": [
+            "created_at"
+          ]
+        },
+        {
+          "name": "entries_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.entries",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "entries_account_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (account_id) REFERENCES accounts(id) DEFERRABLE",
+          "table": "public.entries",
+          "referenced_table": "public.accounts",
+          "columns": [
+            "account_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "entries_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.entries",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.transfers",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('transfers_id_seq'::regclass)"
+        },
+        {
+          "name": "from_account_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "to_account_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "numeric",
+          "nullable": false,
+          "comment": "must be positive"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "transfers_pkey",
+          "def": "CREATE UNIQUE INDEX transfers_pkey ON public.transfers USING btree (id)",
+          "table": "public.transfers",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "transfers_from_account_id_idx",
+          "def": "CREATE INDEX transfers_from_account_id_idx ON public.transfers USING btree (from_account_id)",
+          "table": "public.transfers",
+          "columns": [
+            "from_account_id"
+          ]
+        },
+        {
+          "name": "transfers_to_account_id_idx",
+          "def": "CREATE INDEX transfers_to_account_id_idx ON public.transfers USING btree (to_account_id)",
+          "table": "public.transfers",
+          "columns": [
+            "to_account_id"
+          ]
+        },
+        {
+          "name": "transfers_from_account_id_to_account_id_idx",
+          "def": "CREATE INDEX transfers_from_account_id_to_account_id_idx ON public.transfers USING btree (from_account_id, to_account_id)",
+          "table": "public.transfers",
+          "columns": [
+            "from_account_id",
+            "to_account_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "transfers_amount_not_null",
+          "type": "n",
+          "def": "NOT NULL amount",
+          "table": "public.transfers",
+          "referenced_table": "",
+          "columns": [
+            "amount"
+          ]
+        },
+        {
+          "name": "transfers_created_at_not_null",
+          "type": "n",
+          "def": "NOT NULL created_at",
+          "table": "public.transfers",
+          "referenced_table": "",
+          "columns": [
+            "created_at"
+          ]
+        },
+        {
+          "name": "transfers_from_account_id_not_null",
+          "type": "n",
+          "def": "NOT NULL from_account_id",
+          "table": "public.transfers",
+          "referenced_table": "",
+          "columns": [
+            "from_account_id"
+          ]
+        },
+        {
+          "name": "transfers_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.transfers",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "transfers_to_account_id_not_null",
+          "type": "n",
+          "def": "NOT NULL to_account_id",
+          "table": "public.transfers",
+          "referenced_table": "",
+          "columns": [
+            "to_account_id"
+          ]
+        },
+        {
+          "name": "transfers_from_account_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (from_account_id) REFERENCES accounts(id) DEFERRABLE",
+          "table": "public.transfers",
+          "referenced_table": "public.accounts",
+          "columns": [
+            "from_account_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "transfers_to_account_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (to_account_id) REFERENCES accounts(id) DEFERRABLE",
+          "table": "public.transfers",
+          "referenced_table": "public.accounts",
+          "columns": [
+            "to_account_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "transfers_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.transfers",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.users",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "username",
+          "type": "varchar",
+          "nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "varchar",
+          "nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "varchar",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": "varchar",
+          "nullable": false
+        },
+        {
+          "name": "password_changed_at",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "default": "'0001-01-01 00:00:00+00'::timestamp with time zone"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "users_pkey",
+          "def": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (username)",
+          "table": "public.users",
+          "columns": [
+            "username"
+          ]
+        },
+        {
+          "name": "users_email_key",
+          "def": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)",
+          "table": "public.users",
+          "columns": [
+            "email"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "users_created_at_not_null",
+          "type": "n",
+          "def": "NOT NULL created_at",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "created_at"
+          ]
+        },
+        {
+          "name": "users_email_not_null",
+          "type": "n",
+          "def": "NOT NULL email",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "email"
+          ]
+        },
+        {
+          "name": "users_full_name_not_null",
+          "type": "n",
+          "def": "NOT NULL full_name",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "full_name"
+          ]
+        },
+        {
+          "name": "users_hashed_password_not_null",
+          "type": "n",
+          "def": "NOT NULL hashed_password",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "hashed_password"
+          ]
+        },
+        {
+          "name": "users_password_changed_at_not_null",
+          "type": "n",
+          "def": "NOT NULL password_changed_at",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "password_changed_at"
+          ]
+        },
+        {
+          "name": "users_username_not_null",
+          "type": "n",
+          "def": "NOT NULL username",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "username"
+          ]
+        },
+        {
+          "name": "users_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (username)",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "username"
+          ]
+        },
+        {
+          "name": "users_email_key",
+          "type": "UNIQUE",
+          "def": "UNIQUE (email)",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "email"
+          ]
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "table": "public.accounts",
+      "columns": [
+        "owner"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.users",
+      "parent_columns": [
+        "username"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (owner) REFERENCES users(username) DEFERRABLE"
+    },
+    {
+      "table": "public.entries",
+      "columns": [
+        "account_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.accounts",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (account_id) REFERENCES accounts(id) DEFERRABLE"
+    },
+    {
+      "table": "public.transfers",
+      "columns": [
+        "from_account_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.accounts",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (from_account_id) REFERENCES accounts(id) DEFERRABLE"
+    },
+    {
+      "table": "public.transfers",
+      "columns": [
+        "to_account_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.accounts",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (to_account_id) REFERENCES accounts(id) DEFERRABLE"
+    }
+  ],
+  "driver": {
+    "name": "postgres",
+    "database_version": "PostgreSQL 18.3 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "meta": {
+      "current_schema": "public",
+      "search_paths": [
+        "root",
+        "public"
+      ],
+      "dict": {
+        "Functions": "Stored procedures and functions"
+      }
+    }
+  }
+}
