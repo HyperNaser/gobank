@@ -83,3 +83,8 @@ Generate db docs via:
 ```bash
 tbls doc
 ```
+
+Generate swagger docs via:
+```bash
+swag init -g main.go -o docs
+```
