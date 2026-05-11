@@ -1,0 +1,2 @@
+dsn: postgresql://root:root@localhost:5432/gobank?sslmode=disable
+docPath: doc/schema
