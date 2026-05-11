@@ -88,3 +88,8 @@ Generate swagger docs via:
 ```bash
 swag init -g main.go -o docs
 ```
+
+Make db migration via:
+```bash
+migrate create -ext sql -dir db/migration -seq <migration_name>
+```
